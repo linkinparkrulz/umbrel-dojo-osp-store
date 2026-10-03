@@ -3,8 +3,8 @@ id: dojo-osp-dojo
 category: bitcoin
 name: Dojo
 icon: https://raw.githubusercontent.com/linkinparkrulz/umbrel-dojo-osp-store/HEAD/dojo-osp-dojo/icon.svg
-version: "1.29.3-patch.5"
-tagline: Your own private backend for Ashigaru and Samourai
+version: "1.29.3-patch.6"
+tagline: Your own private backend for Ashigaru, Sentinel and Samourai
 description: >-
   Dojo indexes your own wallets against your own Bitcoin node, so the addresses
   and balances you look up never leave your Umbrel. Pair a wallet to it and
@@ -38,31 +38,26 @@ description: >-
   Whirlpool is not included. Its coordinator was shut down in 2024 and the
   service no longer exists.
 releaseNotes: >-
-  Fixes a broken page after the last update. If the app came back looking
-  unstyled, with bulleted lists where the status panel should be, and the
-  block height stuck on "Waiting for Dojo…", that is this bug. Your browser had
-  kept the previous version's stylesheet and script and paired them with the
-  new page, and the old script stops at the first thing it cannot find — which
-  is why the page sat there rather than merely looking wrong.
+  Your wallet now gets a block explorer straight away. Opening a transaction
+  used to fall back to whatever your wallet ships with, because Dojo can only
+  hand over your own Mempool once Tor is switched on in umbrelOS and Dojo
+  restarted — and Tor is off by default. Until you do both, pairing now points
+  at mempool.space over Tor instead. That is private from your network, though
+  mempool.space still sees which transactions you look at, so the pairing
+  screen says which of the two you are on and how to move to your own.
 
 
-  Nothing was wrong with your Dojo: it carried on indexing throughout, and a
-  hard refresh was enough to clear it. This update makes that impossible rather
-  than asking anyone to know about it, so the page now updates cleanly from
-  here on.
+  Pairing is now a pop-out rather than a panel further down the page, and the
+  payload behind it can be copied in one click for wallets that ask you to
+  paste it rather than scan.
 
 
-  Everything from the previous update is in this one, so if you have not seen
-  the rebuilt page yet, this is where it arrives.
-
-
-  Also fixes the Bitcoin node indicator, which showed red on a node that was
-  working. The page was reading the node's figures from the wrong place in the
-  reply, so it never found them: the light went red and the chain line fell
-  back to "Indexed by your Dojo" instead of comparing your Dojo's height
-  against your node's. Nothing was wrong with the node, and nothing was wrong
-  with the indexing — only with the reading of it. This one predates the
-  redesign; it was simply easier to miss as one small dot among four.
+  Also stops the Bitcoin node indicator going red while the app is still
+  starting. Dojo's broadcast service waits for the Soroban relay before it
+  answers, and Soroban builds its own Tor connection first, so for about the
+  first half minute the page genuinely cannot see your node. It says "unknown"
+  and shows amber for that now, keeping red for a node that really is
+  unreachable.
 developer: Dojo Open Source Project
 website: https://github.com/Dojo-Open-Source-Project
 dependencies:
@@ -73,7 +68,11 @@ repo: https://github.com/Dojo-Open-Source-Project/samourai-dojo
 support: https://github.com/Dojo-Open-Source-Project/samourai-dojo/issues
 
 port: 3025
-gallery: []
+gallery:
+  - https://raw.githubusercontent.com/linkinparkrulz/umbrel-dojo-osp-store/HEAD/dojo-osp-dojo/1.jpg
+  - https://raw.githubusercontent.com/linkinparkrulz/umbrel-dojo-osp-store/HEAD/dojo-osp-dojo/2.jpg
+  - https://raw.githubusercontent.com/linkinparkrulz/umbrel-dojo-osp-store/HEAD/dojo-osp-dojo/3.jpg
+  - https://raw.githubusercontent.com/linkinparkrulz/umbrel-dojo-osp-store/HEAD/dojo-osp-dojo/4.jpg
 path: ""
 
 defaultUsername: ""
