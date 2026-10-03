@@ -5,7 +5,7 @@ services:
       APP_PORT: 8081
 
   db:
-    image: ghcr.io/linkinparkrulz/dojo-db:1.7.0-umbrel13@sha256:bcc49d7cc746a5c7cae4c99248416adfa57e05ca4dacb76ed2977e4f3d0f66b2
+    image: ghcr.io/linkinparkrulz/dojo-db:1.7.0-umbrel14@sha256:72be5f8fc973e6df2d3fb7444975ce00df687171072792ff046284f263291c0c
     init: true
     restart: on-failure
     user: "1000:1000"
@@ -27,7 +27,7 @@ services:
       retries: 6
 
   node:
-    image: ghcr.io/linkinparkrulz/dojo-nodejs:1.29.3-umbrel13@sha256:a150a5ec23807366e48df8c4830e65b0377b6901ca97998eea17fb6db37dbcd4
+    image: ghcr.io/linkinparkrulz/dojo-nodejs:1.29.3-umbrel14@sha256:2552300137ae086e997ea79c3b47dba6a82c94794c9cf7d67c61740b5a745c95
     init: true
     restart: on-failure
     user: "1000:1000"
@@ -35,7 +35,13 @@ services:
     # import time and uses it to build the auth47 callback URL. Give Tor a
     # bounded chance to publish it on a first install so auth47 is live
     # straight away; Dojo starts fine without it either way.
-    command: sh -c 'n=0; while [ ! -f /var/lib/tor/hsv3dojo/hostname ] && [ $$n -lt 60 ]; do n=$$((n+1)); sleep 2; done; exec /home/node/app/wait-for-it.sh dojo-osp-dojo_db_1:3306 --timeout=720 --strict -- /home/node/app/restart.sh'
+    # The second wait is for Soroban's own onion, and only when the user has
+    # turned announcing on. keys/index.js reads that hostname at import time,
+    # and Soroban writes it only after its Tor has bootstrapped -- tens of
+    # seconds after this container starts. Without the wait the read loses the
+    # race on every cold start. `$$` is compose's escape for a literal `$`, so
+    # SOROBAN_ANNOUNCE is expanded by the container's shell, not by compose.
+    command: sh -c 'n=0; while [ ! -f /var/lib/tor/hsv3dojo/hostname ] && [ $$n -lt 60 ]; do n=$$((n+1)); sleep 2; done; if [ "$$SOROBAN_ANNOUNCE" = "on" ]; then n=0; while [ ! -f /var/lib/tor/hsv3soroban/hostname ] && [ $$n -lt 90 ]; do n=$$((n+1)); sleep 2; done; fi; exec /home/node/app/wait-for-it.sh dojo-osp-dojo_db_1:3306 --timeout=720 --strict -- /home/node/app/restart.sh'
     depends_on:
       db:
         condition: service_healthy
@@ -48,6 +54,11 @@ services:
       # the file: hooks/pre-start only writes hostname once Mempool has
       # published, and an absent file is what tells Dojo there is no explorer.
       - ${APP_DATA_DIR}/data/explorer:/var/lib/tor/hsv3explorer:ro
+      # Soroban's own onion, for when announcing is on. Soroban writes it to
+      # /home/soroban/data/hostname (SOROBAN_ONION_FILE), which is this same
+      # host directory, and Dojo looks for it under hsv3soroban -- so this
+      # mount is only renaming the path Dojo expects onto the one that exists.
+      - ${APP_DATA_DIR}/data/soroban:/var/lib/tor/hsv3soroban:ro
     environment:
       # pm2 keeps its state under $HOME; without this it lands on / and the
       # process manager cannot start.
@@ -138,7 +149,7 @@ services:
       NODE_URL_ESPLORA_API: https://blockstream.info/testnet
 
   soroban:
-    image: ghcr.io/linkinparkrulz/dojo-soroban:0.4.2-umbrel13@sha256:51d04afe93dcd660c22aa089465f9198faedae5d1689138c9dc6f29083fa959e
+    image: ghcr.io/linkinparkrulz/dojo-soroban:0.4.2-umbrel14@sha256:88d5be6e5204e471a8cf1961c186395c945620db4a317e6de51a3ec7fce2949f
     init: true
     restart: on-failure
     user: "1000:1000"
@@ -155,7 +166,7 @@ services:
       - ${APP_DATA_DIR}/data/soroban:/home/soroban/data
 
   nginx:
-    image: ghcr.io/linkinparkrulz/dojo-nginx:1.29.3-umbrel13@sha256:adb80c32877e3e00e3f938aef5d1fc665138de01d88bdec9afcc894a7440dfcb
+    image: ghcr.io/linkinparkrulz/dojo-nginx:1.29.3-umbrel14@sha256:b1d07c3d2e03413578c28184a92ca1ecb4dd12fdef0092f370cf71b7e1341393
     init: true
     restart: on-failure
     user: "1000:1000"
@@ -206,7 +217,7 @@ services:
     # Deliberately no `ports:` -- umbrelOS fetches a widget endpoint itself,
     # over the app network and without going through app_proxy, so 3000 must
     # not be reachable from the host.
-    image: ghcr.io/linkinparkrulz/dojo-widget:1.29.3-umbrel13@sha256:635368bb9aa8b2852c67f34bcfd0d161dcccc147e703660396b688fb37ce730a
+    image: ghcr.io/linkinparkrulz/dojo-widget:1.29.3-umbrel14@sha256:2e3729b49b66c1eee82c4eb2a995aea0ffaed1bb728dbf694a54f8696429a602
     init: true
     restart: on-failure
     user: "1000:1000"
